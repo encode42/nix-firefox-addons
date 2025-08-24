@@ -1,6 +1,6 @@
 # Nix Expressions For Firefox Addons
 
-This flake provides over **100,000** addons from https://addons.mozilla.org/ as Nix packages. (with more being added every day)
+This flake provides over **130,000** addons from https://addons.mozilla.org/ as Nix packages. (with more being added every day)
 
 A GitHub Action updates the list every day at 2:37am UTC. The fetcher script includes almost every addon that has as low as 1 daily user. If you happen to find an addon you'd like to have in this flake just download it once (getting its weekly downloads to 1) and it will be part of the next fetch.
 
@@ -21,32 +21,15 @@ A GitHub Action updates the list every day at 2:37am UTC. The fetcher script inc
 }
 ```
 
-2. Import the module into your Home Manager configuration
+2. Apply the overlay to your nixpkgs instance in your NixOS, nix-darwin or Home Manager configuration
 
-In your flake's Home Manager configuration:
-```nix
-{
-  outputs = { self, nixpkgs, home-manager, nix-firefox-addons, ... }: {
-    homeConfigurations.your-username = home-manager.lib.homeManagerConfiguration {
-      pkgs = nixpkgs.legacyPackages.x86_64-linux;
-      modules = [
-        # your other modules...
-        nix-firefox-addons.homeManagerModules.default
-        ./home.nix
-      ];
-    };
-  };
-}
-```
 
-Alternatively, you can also import it directly in your `home.nix` with:
 ```nix
 { inputs, ... }: {
-  imports = [ inputs.nix-firefox-addons.homeManagerModules.default ];
+  nixpkgs.overlays = [ inputs.nix-firefox-addons.overlays.default ];
   # rest of your configuration...
 }
 ```
-
 
 
 3. In your `home.nix` (or wherever you configured Firefox) add the desired addons (uBlock Origin as an example)
@@ -62,6 +45,7 @@ Alternatively, you can also import it directly in your `home.nix` with:
         packages = with pkgs.firefoxAddons; [
           ublock-origin
         ];
+        # only works for some addons
         settings."uBlock0@raymondhill.net".settings = {
           selectedFilterLists = [
             "ublock-filters"
@@ -79,44 +63,6 @@ Alternatively, you can also import it directly in your `home.nix` with:
       };
     }
   }
-}
-```
-
-### With NixOS Home Manager Integration
-
-If you're using Home Manager as a NixOS module (rather than standalone), you can also import `nixosModules.default` directly in your NixOS configuration:
-
-```nix
-{
-  inputs = {
-    # ...
-    nix-firefox-addons.url = "github:osipog/nix-firefox-addons";
-  };
-
-  outputs = { self, nixpkgs, home-manager, nix-firefox-addons, ... }: {
-    nixosConfigurations.your-hostname = nixpkgs.lib.nixosSystem {
-      system = "x86_64-linux";
-      modules = [
-        home-manager.nixosModules.home-manager
-        nix-firefox-addons.nixosModules.default
-        {
-          home-manager.users.your-username = {
-            programs.firefox = {
-              enable = true;
-              profiles.default = {
-                extensions = {
-                  packages = with pkgs.firefoxAddons; [
-                    ublock-origin
-                  ];
-                };
-              };
-            };
-          };
-        }
-        # your other modules...
-      ];
-    };
-  };
 }
 ```
 

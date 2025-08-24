@@ -8,31 +8,23 @@
     flake-utils,
     ...
   }: let
-    inherit (builtins) listToAttrs fromJSON warn;
-    inherit (nixpkgs.lib) pipe;
+    inherit (nixpkgs) lib;
+      
+    inherit (builtins) listToAttrs fromJSON readFile;
+    inherit (lib) pipe;
+    inherit (lib.strings) splitString;
 
     addonPackages = pkgs: let
-      fromYamlFile = import ./src/lib/from-yaml-file.nix pkgs;
       buildFirefoxXpiAddon = import ./src/lib/build-firefox-xpi-addon.nix pkgs;
     in
-      pipe ./addons.yaml [
+      pipe ./addons.jsonl [
         # read all addon data into memory
-        fromYamlFile
-
-        # we now have a list of strings containing json
+        readFile
+        (splitString "\n")
         (map fromJSON)
 
         # translate api resource to nix package
-        (map (addon:
-          buildFirefoxXpiAddon {
-            guid = addon.g;
-            slug = addon.s;
-            version = addon.v;
-            url = addon.u;
-            hash = addon.h;
-            permissions = addon.p;
-            license = addon.l;
-          }))
+        (map buildFirefoxXpiAddon)
 
         # to attrset with name being the addon slug
         (map (pkg: {
@@ -41,16 +33,11 @@
         }))
         listToAttrs
       ];
-
-    module = {...}: {
-        nixpkgs.overlays = [(final: prev: {
-          firefoxAddons = addonPackages final;
-        })];
-      };
   in
     {
-      nixosModules.default = module;
-      homeManagerModules.default = module; 
+      overlays.default = final: prev: {
+        firefoxAddons = addonPackages final;
+      };
     }
     // (
       flake-utils.lib.eachDefaultSystem (
@@ -60,11 +47,9 @@
             config.allowUnfree = true;
           };
         in {
-          addons =
-            warn "Using the nix-firefox-addons.addons.\${system} is discouraged as unfree packages are enabled by default. Using the NixOS module (nix-firefox-addons.nixosModules.default) will enable an overlay that uses your nixpkgs instance with your nixpkgs configuration to build the addons."
-            (addonPackages pkgs);
+          addons = (addonPackages pkgs);
 
-          packages = {
+          apps = {
             search-addon = pkgs.writeShellApplication {
               name = "search-addon";
               runtimeInputs = [pkgs.nushell];

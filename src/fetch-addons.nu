@@ -8,7 +8,7 @@
 # Though the amount of addons that have 1 daily user is more than 30k, so we can't query all of them. That's okay as we
 # are sorting by weekly downloads. So anyone just needs to download the addon and it will be found by the script. 
 def main [ 
-    addons_yaml: path 
+    addons_jsonl: path 
     --sleep-between-calls (-s): duration = 0sec
     --api-base-url (-u): string = "https://addons.mozilla.org/api/v5"
     --job-count (-j): int = 6
@@ -30,27 +30,19 @@ def main [
     }
 
     # after each operation clean up the file
-    open $addons_yaml
+    ^cat $addons_jsonl
+        | split row "\n"
         | each {from json}
         | reverse
-        | uniq-by g
-        | sort-by g
+        | uniq-by guid
+        | sort-by guid
         | each {to json --raw}
-        | to yaml
-        | save $addons_yaml --force
+        | str join "\n"
+        | save $addons_jsonl --force
     return
 
 
     # Functions
-
-    def get-known-addons [] {
-        if ($addons_yaml | path exists) {
-            ^cat $addons_yaml | from yaml
-        } else {
-            "[]" | save $addons_yaml
-            return []
-        } 
-    }
 
     # function to call the api
     def api [ route: string params = {}] {
@@ -76,13 +68,13 @@ def main [
         $prefetched
             | if ($in == null) {api $"/addons/addon/($id)" {lang: "en-US"}} else {$in}
             | {
-                g: $in.guid,
-                s: $in.slug,
-                v: $in.current_version.version,
-                u: $in.current_version.file.url,
-                h: $in.current_version.file.hash,
-                p: ($in.current_version.file.permissions | default []),
-                l: ($in.current_version | default {slug: "all-rights-reserved"} license | get license.slug),
+                guid: $in.guid,
+                slug: $in.slug,
+                version: $in.current_version.version,
+                url: $in.current_version.file.url,
+                hash: $in.current_version.file.hash,
+                permissions: ($in.current_version.file.permissions | default []),
+                license: ($in.current_version | default {slug: "all-rights-reserved"} license | get license.slug),
             }
     }
 
@@ -126,8 +118,9 @@ def main [
                 | get results
                 | each {get-addon $in.id --prefetched $in}
                 | each {to json --raw}
-                | to yaml
-                | save $addons_yaml --append
+                | str join "\n"
+                | do {"\n" + $in}
+                | save $addons_jsonl --append
         }
     }
 }

@@ -17,7 +17,7 @@ jobs:
         uses: cachix/install-nix-action@v31
 
       - name: Run the script
-        run: nix run .#fetch-addons addons.yaml
+        run: nix run .#fetch-addons addons.jsonl
 
       - name: Commit and push
         uses: EndBug/add-and-commit@v9
@@ -25,4 +25,4 @@ jobs:
           author_name: github-actions[bot]
           author_email: github-actions[bot]@users.noreply.github.com
           message: "update addons"
-          add: "addons.yaml"
+          add: "addons.jsonl"
