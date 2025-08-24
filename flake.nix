@@ -49,7 +49,7 @@
         in {
           addons = (addonPackages pkgs);
 
-          apps = {
+          packages = {
             search-addon = pkgs.writeShellApplication {
               name = "search-addon";
               runtimeInputs = [pkgs.nushell];
