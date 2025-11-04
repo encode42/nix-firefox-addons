@@ -90,6 +90,6 @@ nix run github:osipog/nix-firefox-addons#search-addon ublock
 
 ## License
 
-All code in this repository is licensed under the MIT License, except for the `addons.yaml` file which contains addon metadata and is not subject to this license.
+All code in this repository is licensed under the MIT License.
 
 For the full license text, see [LICENSE](LICENSE) or visit https://opensource.org/licenses/MIT.
