@@ -74,7 +74,7 @@ def main [
                 url: $in.current_version.file.url,
                 hash: $in.current_version.file.hash,
                 permissions: ($in.current_version.file.permissions | default []),
-                license: ($in.current_version | default {slug: "all-rights-reserved"} license | get license.slug),
+                license: ($in.current_version | get license.slug | default "all-rights-reserved"),
             }
     }
 
