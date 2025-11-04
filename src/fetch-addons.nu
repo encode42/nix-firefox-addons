@@ -8,7 +8,7 @@
 # Though the amount of addons that have 1 daily user is more than 30k, so we can't query all of them. That's okay as we
 # are sorting by weekly downloads. So anyone just needs to download the addon and it will be found by the script. 
 def main [ 
-    addons_jsonl: path 
+    addons_jsonl: path
     --sleep-between-calls (-s): duration = 0sec
     --api-base-url (-u): string = "https://addons.mozilla.org/api/v5"
     --job-count (-j): int = 6
@@ -74,7 +74,7 @@ def main [
                 url: $in.current_version.file.url,
                 hash: $in.current_version.file.hash,
                 permissions: ($in.current_version.file.permissions | default []),
-                license: ($in.current_version | get license.slug | default "all-rights-reserved"),
+                license: ($in.current_version | get license | default {slug: null} | get slug | default "all-rights-reserved"),
             }
     }
 
